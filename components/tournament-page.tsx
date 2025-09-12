@@ -119,7 +119,7 @@ export function TournamentPage({ game, onBack, onJoinSlot, walletBalance, onAddM
 
   const handleJoinSlot = (slotId: string) => {
     if (walletBalance < currentGame.entryFee) {
-      // Show insufficient balance modal
+      // Show insufficient balance modal only when balance is insufficient
       const shouldAddMoney = confirm(
         `Insufficient balance! You need ₹${currentGame.entryFee} but have ₹${walletBalance}. Would you like to add money to your wallet?`,
       )
@@ -129,6 +129,7 @@ export function TournamentPage({ game, onBack, onJoinSlot, walletBalance, onAddM
       return
     }
 
+    // Automatically join tournament if sufficient balance
     setSelectedSlot(slotId)
     onJoinSlot(slotId, currentGame.entryFee)
   }
@@ -253,7 +254,7 @@ export function TournamentPage({ game, onBack, onJoinSlot, walletBalance, onAddM
                       </Badge>
                       <Button
                         onClick={() => handleJoinSlot(slot.id)}
-                        disabled={slot.status === "full"}
+                        disabled={slot.status === "full" || walletBalance < currentGame.entryFee}
                         className={`${
                           slot.status === "full"
                             ? "bg-slate-600 text-slate-400 cursor-not-allowed"
