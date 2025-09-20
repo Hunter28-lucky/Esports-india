@@ -48,7 +48,6 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
   const [loading, setLoading] = useState(true)
   const [debugInfo, setDebugInfo] = useState<{visible: boolean, steps: string[]}>({visible: false, steps: []})
   const [fetchFailCount, setFetchFailCount] = useState(0)
-  const [useFallbackData, setUseFallbackData] = useState(false)
   // Use the user prop directly so updates from Auth propagate correctly
   const user = userProp || null
 
@@ -124,22 +123,17 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
         // Increment fail counter
         setFetchFailCount(count => {
           const newCount = count + 1
-          // After 3 consecutive failures, offer fallback mode
-          if (newCount >= 3 && !useFallbackData) {
-            setDebugInfo(prev => ({...prev, steps: [...prev.steps, "⚠️ Multiple failures detected, offering fallback mode"]}))
+          // After 3 consecutive failures, show helpful message
+          if (newCount >= 3) {
+            setDebugInfo(prev => ({...prev, steps: [...prev.steps, "⚠️ Multiple failures detected"]}))
           }
           return newCount
         })
         
-        if (useFallbackData) {
-          setDebugInfo(prev => ({...prev, steps: [...prev.steps, "Using fallback data instead"]}))
-          setTournaments(fallbackTournaments)
-        } else {
-          setTournaments([])
-          
-          // Schedule an auto-retry with backoff
-          retryFetchWithBackoff(fetchFailCount);
-        }
+        setTournaments([])
+        
+        // Schedule an auto-retry with backoff
+        retryFetchWithBackoff(fetchFailCount);
         
         setLoading(false)
         toast({
@@ -447,27 +441,6 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
             >
               Force Refresh
             </Button>
-            {fetchFailCount >= 3 && (
-              <Button 
-                onClick={() => {
-                  setUseFallbackData(!useFallbackData)
-                  setDebugInfo(prev => ({...prev, steps: [
-                    ...prev.steps, 
-                    `${useFallbackData ? 'Disabled' : 'Enabled'} fallback mode`
-                  ]}))
-                  if (!useFallbackData) {
-                    setTournaments(fallbackTournaments)
-                  } else {
-                    fetchMyTournaments()
-                  }
-                }} 
-                variant={useFallbackData ? "destructive" : "default"} 
-                size="sm"
-                className="text-xs"
-              >
-                {useFallbackData ? 'Disable Fallback' : 'Use Fallback Data'}
-              </Button>
-            )}
             <Button 
               onClick={() => setDebugInfo({visible: false, steps: []})} 
               variant="destructive" 
@@ -493,6 +466,15 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
                 : "You haven't joined any tournaments yet."
               }
             </p>
+            {user && (
+              <div className="bg-slate-800/50 p-4 rounded-lg mb-4 text-left max-w-md mx-auto">
+                <p className="text-xs text-slate-500 mb-2">Debug Info:</p>
+                <p className="text-xs text-slate-400">User ID: {user.id}</p>
+                <p className="text-xs text-slate-400">Email: {user.email}</p>
+                <p className="text-xs text-slate-400">Query executed: {loading ? 'Loading...' : 'Completed'}</p>
+                <p className="text-xs text-slate-400">Tournaments found: {tournaments.length}</p>
+              </div>
+            )}
             <p className="text-slate-400 mb-6">
               {!user 
                 ? "Log in to your account to start participating in exciting esports competitions!"
