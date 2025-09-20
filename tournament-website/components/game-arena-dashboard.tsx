@@ -307,6 +307,10 @@ export function GameArenaDashboard() {
     setActiveNav(navItem)
     setIsMobileMenuOpen(false)
     setTournamentFlow({ currentView: "dashboard" })
+    if (navItem === 'Tournaments') {
+      // Proactively fetch tournaments when navigating to the tab
+      fetchTournaments()
+    }
   }
 
   const handleJoinTournament = async (tournamentName: string, entryFee: number) => {
@@ -913,6 +917,20 @@ export function GameArenaDashboard() {
       case "Tournaments":
         return (
           <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="text-slate-300 text-sm">
+                {tournamentsLoading ? 'Loading tournaments…' : `Tournaments: ${tournaments.length}`}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-slate-600 text-slate-200 hover:bg-slate-800"
+                onClick={() => fetchTournaments()}
+                disabled={tournamentsLoading}
+              >
+                {tournamentsLoading ? 'Refreshing…' : 'Refresh'}
+              </Button>
+            </div>
             {tournamentsLoading && (
               <div className="p-4 border border-primary/30 rounded-md text-primary text-sm animate-pulse">Loading tournaments...</div>
             )}
