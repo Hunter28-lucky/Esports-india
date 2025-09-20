@@ -142,18 +142,36 @@ export function GameArenaDashboard() {
 
   const [showAdminTournamentCreator, setShowAdminTournamentCreator] = useState(false)
   const fetchTournaments = useCallback(async () => {
+    console.log('[Dashboard] Fetching tournaments...')
     setTournamentsLoading(true)
     setTournamentsError(null)
+
+    // Helper: timeout promise
+    const timeout = (ms: number) => new Promise((resolve) => setTimeout(() => resolve({ __timeout: true }), ms))
+
     try {
-      const { data, error } = await supabase
+      const query = supabase
         .from('tournaments')
-        .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time, room_id, room_password, image_url, created_at')
-        .order('created_at', { ascending: false })
+        .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time, room_id, room_password, image_url')
+        .order('start_time', { ascending: false })
+
+      const result: any = await Promise.race([query, timeout(10000)]) // 10s safety timeout
+
+      if (result?.__timeout) {
+        console.warn('[Dashboard] Tournaments fetch timed out')
+        setTournamentsError('Request timed out. Please try again.')
+        setTournaments([])
+        return
+      }
+
+      const { data, error } = result
+      console.log('[Dashboard] Tournaments fetch result:', { count: data?.length || 0, error })
       if (error) throw error
       setTournaments(data || [])
     } catch (err: any) {
       console.error('[Dashboard] Failed to fetch tournaments:', err)
       setTournamentsError(err?.message || 'Failed to load tournaments')
+      setTournaments([])
     } finally {
       setTournamentsLoading(false)
     }
