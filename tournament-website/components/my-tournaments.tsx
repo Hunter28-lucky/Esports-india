@@ -97,24 +97,118 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
       console.log('👤 Fetching tournaments for user:', user.id)
       setDebugInfo(prev => ({...prev, steps: [...prev.steps, `User authenticated: ${user.id.slice(0,8)}...`]}))
       
-      // Helper to create a non-throwing timeout (sentinel result)
-      const timeoutAfter = (ms: number) =>
-        new Promise((resolve) => setTimeout(() => resolve({ __timeout: true }), ms))
+      // Try a much simpler approach first
+      console.log('🔍 Attempting simple direct query...')
+      
+      try {
+        // Simple direct query with timeout
+        const { data: simpleParticipants, error: simpleError } = await supabase
+          .from('tournament_participants')
+          .select('tournament_id, joined_at')
+          .eq('user_id', user.id)
+          .limit(20)
 
-      // Step 1: Get just the participant rows (fast, small payload)
-      // Use simplified query to reduce RLS policy evaluation overhead 
-      const participantsPromise = supabase
-        .from('tournament_participants')
-        .select('tournament_id, joined_at')
-        .eq('user_id', user.id)
-        .order('joined_at', { ascending: false }) // Get newest first
-        .limit(10) // Reasonable limit to avoid overloading
+        console.log('📊 Simple query result:', { 
+          data: simpleParticipants, 
+          error: simpleError,
+          count: simpleParticipants?.length || 0 
+        })
 
-      console.log('🔍 Starting participants query with 15s timeout for:', user.id)
-      const participantsResult = (await Promise.race([
-        participantsPromise,
-        timeoutAfter(15000), // Increased from 8000ms to 15000ms
-      ])) as any
+        if (simpleError) {
+          console.error('❌ Database error:', simpleError)
+          throw simpleError
+        }
+
+        if (!simpleParticipants || simpleParticipants.length === 0) {
+          console.log('ℹ️ No tournament participations found for user')
+          setTournaments([])
+          setLoading(false)
+          return
+        }
+
+        // Get tournament details for found participations
+        const tournamentIds = simpleParticipants.map(p => p.tournament_id)
+        console.log('🔍 Fetching tournament details for IDs:', tournamentIds)
+
+        const { data: tournamentsData, error: tournamentsError } = await supabase
+          .from('tournaments')
+          .select('*')
+          .in('id', tournamentIds)
+
+        console.log('🏆 Tournaments query result:', { 
+          data: tournamentsData, 
+          error: tournamentsError,
+          count: tournamentsData?.length || 0 
+        })
+
+        if (tournamentsError) {
+          console.error('❌ Tournaments query error:', tournamentsError)
+          throw tournamentsError
+        }
+
+        if (!tournamentsData || tournamentsData.length === 0) {
+          console.log('ℹ️ No tournament details found')
+          setTournaments([])
+          setLoading(false)
+          return
+        }
+
+        // Map the data to our component format
+        const tournamentMap = new Map()
+        tournamentsData.forEach(t => tournamentMap.set(t.id, t))
+
+        const joinedTournaments = simpleParticipants
+          .map(p => {
+            const tournament = tournamentMap.get(p.tournament_id)
+            if (!tournament) return null
+
+            return {
+              id: tournament.id,
+              name: tournament.name,
+              game: tournament.game,
+              entry_fee: tournament.entry_fee,
+              prize_pool: tournament.prize_pool,
+              max_players: tournament.max_players,
+              current_players: tournament.current_players || 0,
+              status: tournament.status,
+              start_time: tournament.start_time,
+              room_id: tournament.room_id,
+              room_password: tournament.room_password,
+              image_url: defaultImageForGame(tournament.game),
+              description: tournament.description || `${tournament.game} tournament with ₹${tournament.prize_pool} prize pool`,
+              joined_at: p.joined_at,
+              participants_count: tournament.current_players || 0,
+            }
+          })
+          .filter(Boolean) as JoinedTournament[]
+
+        console.log('✅ Final tournaments to display:', joinedTournaments)
+        setTournaments(joinedTournaments)
+        setLoading(false)
+        
+        // Reset fail counter on success
+        setFetchFailCount(0)
+        return
+
+      } catch (directError) {
+        console.error('❌ Direct query failed, trying fallback...', directError)
+        
+        // Fallback to the more complex timeout approach if needed
+        const timeoutAfter = (ms: number) =>
+          new Promise((resolve) => setTimeout(() => resolve({ __timeout: true }), ms))
+
+        const participantsPromise = supabase
+          .from('tournament_participants')
+          .select('tournament_id, joined_at')
+          .eq('user_id', user.id)
+          .order('joined_at', { ascending: false })
+          .limit(10)
+
+        console.log('🔍 Starting fallback participants query with timeout...')
+        const participantsResult = (await Promise.race([
+          participantsPromise,
+          timeoutAfter(10000), // Reduced timeout
+        ])) as any
 
       if (participantsResult?.__timeout) {
         console.warn('⏳ Participants query timed out; showing empty state')
