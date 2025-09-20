@@ -11,6 +11,7 @@ import { Plus, Trash2, Edit, Users, Calendar, DollarSign, Shield, Crown, Setting
 import { supabase } from "@/lib/supabase"
 import { useToast } from "@/hooks/use-toast"
 import dynamic from "next/dynamic"
+import { useAuth } from "./auth-provider"
 // Dev-only diagnostics (kept out of prod bundle)
 const AdminDebug = process.env.NODE_ENV !== 'production'
   ? dynamic(() => import('./admin-debug'), { ssr: false })
@@ -56,6 +57,7 @@ interface AdminPanelProps {
 
 export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
   const { toast } = useToast()
+  const { user, isAdmin, loading: authLoading } = useAuth()
   const [tournaments, setTournaments] = useState<Tournament[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -89,13 +91,18 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
     setError(null)
 
     try {
-      // Quick auth check first (helps RLS policy diagnostics)
-      const { data: authData, error: authError } = await supabase.auth.getUser()
-      if (authError) {
-        console.warn('[AdminPanel] Auth check error:', authError)
+      // Use AuthProvider context; avoid secondary auth calls that can stall
+      if (authLoading) {
+        console.log('[AdminPanel] Auth still loading; delaying init')
+        return
       }
-      if (!authData?.user) {
+      if (!user) {
         setError('Please sign in to view admin data (RLS requires authenticated access).')
+        setLoading(false)
+        return
+      }
+      if (!isAdmin) {
+        setError('Access denied: Admins only.')
         setLoading(false)
         return
       }
@@ -151,8 +158,10 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
       console.warn('[AdminPanel] Cache hydration failed:', e)
     }
 
-    // Always refresh from network
-    initializeData()
+    // Always refresh from network after auth is ready
+    if (!authLoading) {
+      initializeData()
+    }
 
     // Safety: ensure we never get stuck in loading state
     const safetyTimer = setTimeout(() => {
@@ -166,7 +175,7 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
     }, 8000)
 
     return () => clearTimeout(safetyTimer)
-  }, [])
+  }, [authLoading])
 
   const fetchTournaments = async () => {
     // Use server API to avoid client-side RLS/cold start delays
