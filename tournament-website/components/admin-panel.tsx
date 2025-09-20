@@ -153,6 +153,19 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
 
     // Always refresh from network
     initializeData()
+
+    // Safety: ensure we never get stuck in loading state
+    const safetyTimer = setTimeout(() => {
+      if (loading) {
+        console.warn('[AdminPanel] Safety timeout reached, forcing loading=false')
+        setLoading(false)
+        if (!error && tournaments.length === 0) {
+          setError('Loading took too long. Please tap Retry or check your network/Supabase configuration.')
+        }
+      }
+    }, 8000)
+
+    return () => clearTimeout(safetyTimer)
   }, [])
 
   const fetchTournaments = async () => {
