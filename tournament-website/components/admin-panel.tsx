@@ -156,35 +156,31 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
   }, [])
 
   const fetchTournaments = async () => {
+    // Use server API to avoid client-side RLS/cold start delays
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), 8000)
     try {
-      console.log('Starting fetchTournaments...')
-      // Fetch minimal fields first; limit results to keep payload small
-      console.log('Fetching tournaments (minimal fields)...')
-      const { data, error } = await supabase
-        .from('tournaments')
-        .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time, image_url, room_id, room_password, created_at')
-  .order('created_at', { ascending: false })
-  .limit(20)
-
-      console.log('Tournament fetch result:', { data, error })
-
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
+      console.log('[AdminPanel] Fetching tournaments via /api/admin/tournaments ...')
+      const res = await fetch('/api/admin/tournaments', { signal: controller.signal, cache: 'no-store' })
+      clearTimeout(id)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `Failed to fetch tournaments (status ${res.status})`)
       }
-      
-      setTournaments(data || [])
-      try {
-        localStorage.setItem(CACHE_KEYS.tournaments, JSON.stringify(data || []))
-      } catch {}
-      console.log('Tournaments set successfully:', data?.length || 0)
-    } catch (error) {
-      console.error('Error fetching tournaments:', error)
-      setError(error instanceof Error ? error.message : 'Unknown error')
-      // Don't show toast in catch - let the UI handle the error state
+      const body = await res.json()
+      const list = Array.isArray(body?.tournaments) ? body.tournaments : []
+      setTournaments(list)
+      try { localStorage.setItem(CACHE_KEYS.tournaments, JSON.stringify(list)) } catch {}
+      console.log('[AdminPanel] Tournaments set:', list.length)
+    } catch (error: any) {
+      if (error?.name === 'AbortError') {
+        setError('Request timed out. Please try again.')
+      } else {
+        setError(error?.message || 'Unknown error')
+      }
+      console.error('[AdminPanel] Error fetching tournaments:', error)
       setTournaments([])
     } finally {
-      console.log('Setting loading to false')
       setLoading(false)
     }
   }
