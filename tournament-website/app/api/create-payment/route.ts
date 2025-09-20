@@ -26,8 +26,8 @@ export async function POST(request: NextRequest) {
       customer_name: customer_name || "GameArena User",
       customer_email: customer_email || "user@gamearena.com",
       customer_phone: customer_phone || "9999999999",
-      redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/payment-success`,
-      webhook_url: `${process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"}/api/payment-webhook`,
+      redirect_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://esports-india.vercel.app"}/payment-success`,
+      webhook_url: `${process.env.NEXT_PUBLIC_SITE_URL || "https://esports-india.vercel.app"}/api/payment-webhook`,
     })
 
     console.log("[v0] Making payment request to ZapUPI API")
