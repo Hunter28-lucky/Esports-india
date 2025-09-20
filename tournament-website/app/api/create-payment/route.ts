@@ -12,20 +12,8 @@ export async function POST(request: NextRequest) {
 
   const tokenKey = process.env.ZAPUPI_TOKEN_KEY
   const secretKey = process.env.ZAPUPI_SECRET_KEY
-  const testMode = process.env.PAYMENT_TEST_MODE === 'true'
 
     if (!tokenKey || !secretKey) {
-      // Allow a safe test mode to proceed without real gateway keys
-      if (testMode) {
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://esports-india.vercel.app"
-        return NextResponse.json({
-          status: "success",
-          order_id,
-          amount,
-          payment_url: `${baseUrl}/payment-success?order_id=${encodeURIComponent(order_id)}`,
-          test_mode: true,
-        })
-      }
       return NextResponse.json({ error: "Payment gateway not configured" }, { status: 500 })
     }
 
@@ -58,17 +46,6 @@ export async function POST(request: NextRequest) {
     console.log("[v0] ZapUPI API response:", result)
 
     if (!response.ok) {
-      // In test mode, gracefully treat failures as success to allow UI flow
-      if (testMode) {
-        const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://esports-india.vercel.app"
-        return NextResponse.json({
-          status: "success",
-          order_id,
-          amount,
-          payment_url: `${baseUrl}/payment-success?order_id=${encodeURIComponent(order_id)}`,
-          test_mode: true,
-        })
-      }
       throw new Error(result.message || "Payment gateway error")
     }
 

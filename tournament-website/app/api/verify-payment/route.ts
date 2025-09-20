@@ -11,12 +11,8 @@ export async function POST(request: NextRequest) {
 
   const tokenKey = process.env.ZAPUPI_TOKEN_KEY
   const secretKey = process.env.ZAPUPI_SECRET_KEY
-  const testMode = process.env.PAYMENT_TEST_MODE === 'true'
 
     if (!tokenKey || !secretKey) {
-      if (testMode) {
-        return NextResponse.json({ status: 'success', order_id, amount: 0, transaction_id: `TEST-${order_id}` })
-      }
       return NextResponse.json({ error: "Payment gateway not configured" }, { status: 500 })
     }
 
@@ -50,9 +46,6 @@ export async function POST(request: NextRequest) {
     console.log("[v0] Payment verification response:", result)
 
     if (!response.ok) {
-      if (testMode) {
-        return NextResponse.json({ status: 'success', order_id, amount: result?.amount || 0, transaction_id: `TEST-${order_id}` })
-      }
       throw new Error(result.message || "Payment verification failed")
     }
 
