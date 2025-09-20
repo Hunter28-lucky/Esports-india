@@ -52,26 +52,8 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
   // Use the user prop directly so updates from Auth propagate correctly
   const user = userProp || null
 
-  // Fallback data for testing UI when database isn't responding
-  const fallbackTournaments: JoinedTournament[] = [
-    {
-      id: "fallback-1",
-      name: "Free Fire Championship",
-      game: "Free Fire",
-      entry_fee: 100,
-      prize_pool: 5000,
-      max_players: 100,
-      current_players: 72,
-      status: "live",
-      start_time: new Date().toISOString(),
-      image_url: "/free-fire-championship-tournament-esports.jpg",
-      description: "Free Fire tournament with ₹5000 prize pool",
-      joined_at: new Date().toISOString(),
-      participants_count: 72,
-      room_id: "FF-92837",
-      room_password: "champion"
-    }
-  ]
+  // Fallback data disabled - always show real database state
+  const fallbackTournaments: JoinedTournament[] = []
 
   // Helper to provide a sensible default image based on game
   const defaultImageForGame = (game?: string) => {
@@ -101,6 +83,8 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
     try {
       if (!user?.id) {
         console.log('❌ No authenticated user found')
+        console.log('🔍 User object:', user)
+        console.log('🔍 Full user props:', userProp)
         setTournaments([])
         setLoading(false)
         toast({
