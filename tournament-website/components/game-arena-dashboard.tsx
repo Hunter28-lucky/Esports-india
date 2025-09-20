@@ -146,50 +146,29 @@ export function GameArenaDashboard() {
     setTournamentsLoading(true)
     setTournamentsError(null)
 
-    // Helper: timeout promise
-    const timeout = (ms: number) => new Promise((resolve) => setTimeout(() => resolve({ __timeout: true }), ms))
+    // Client-side fetch to our server API with a timeout
+    const controller = new AbortController()
+    const id = setTimeout(() => controller.abort(), 10000)
 
     try {
-      // First attempt: wide select including optional columns
-      const wideQuery = supabase
-        .from('tournaments')
-        .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time, room_id, room_password, image_url')
-        .order('start_time', { ascending: false })
-
-      let result: any = await Promise.race([wideQuery, timeout(10000)]) // 10s safety timeout
-
-      if (result?.__timeout) {
+      const res = await fetch('/api/tournaments', { signal: controller.signal, cache: 'no-store' })
+      clearTimeout(id)
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `Failed to load tournaments (status ${res.status})`)
+      }
+      const body = await res.json()
+      const list = Array.isArray(body?.tournaments) ? body.tournaments : []
+      console.log('[Dashboard] Tournaments fetch result:', { count: list.length })
+      setTournaments(list)
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
         console.warn('[Dashboard] Tournaments fetch timed out')
         setTournamentsError('Request timed out. Please try again.')
-        setTournaments([])
-        return
+      } else {
+        console.error('[Dashboard] Failed to fetch tournaments:', err)
+        setTournamentsError(err?.message || 'Failed to load tournaments')
       }
-
-      let { data, error } = result
-      if (error) {
-        console.warn('[Dashboard] Wide select failed, retrying with minimal columns...', error?.message)
-        // Retry: minimal required columns only (avoid optional fields that may not exist)
-        const minimalQuery = supabase
-          .from('tournaments')
-          .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time')
-          .order('start_time', { ascending: false })
-        result = await Promise.race([minimalQuery, timeout(8000)]) // shorter timeout on retry
-        if (result?.__timeout) {
-          console.warn('[Dashboard] Tournaments fetch timed out on retry')
-          setTournamentsError('Request timed out. Please try again.')
-          setTournaments([])
-          return
-        }
-        data = result.data
-        error = result.error
-      }
-
-      console.log('[Dashboard] Tournaments fetch result:', { count: data?.length || 0, error })
-      if (error) throw error
-      setTournaments(data || [])
-    } catch (err: any) {
-      console.error('[Dashboard] Failed to fetch tournaments:', err)
-      setTournamentsError(err?.message || 'Failed to load tournaments')
       setTournaments([])
     } finally {
       setTournamentsLoading(false)
