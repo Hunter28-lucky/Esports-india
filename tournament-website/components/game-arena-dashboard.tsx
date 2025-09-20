@@ -150,12 +150,13 @@ export function GameArenaDashboard() {
     const timeout = (ms: number) => new Promise((resolve) => setTimeout(() => resolve({ __timeout: true }), ms))
 
     try {
-      const query = supabase
+      // First attempt: wide select including optional columns
+      const wideQuery = supabase
         .from('tournaments')
         .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time, room_id, room_password, image_url')
         .order('start_time', { ascending: false })
 
-      const result: any = await Promise.race([query, timeout(10000)]) // 10s safety timeout
+      let result: any = await Promise.race([wideQuery, timeout(10000)]) // 10s safety timeout
 
       if (result?.__timeout) {
         console.warn('[Dashboard] Tournaments fetch timed out')
@@ -164,7 +165,25 @@ export function GameArenaDashboard() {
         return
       }
 
-      const { data, error } = result
+      let { data, error } = result
+      if (error) {
+        console.warn('[Dashboard] Wide select failed, retrying with minimal columns...', error?.message)
+        // Retry: minimal required columns only (avoid optional fields that may not exist)
+        const minimalQuery = supabase
+          .from('tournaments')
+          .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time')
+          .order('start_time', { ascending: false })
+        result = await Promise.race([minimalQuery, timeout(8000)]) // shorter timeout on retry
+        if (result?.__timeout) {
+          console.warn('[Dashboard] Tournaments fetch timed out on retry')
+          setTournamentsError('Request timed out. Please try again.')
+          setTournaments([])
+          return
+        }
+        data = result.data
+        error = result.error
+      }
+
       console.log('[Dashboard] Tournaments fetch result:', { count: data?.length || 0, error })
       if (error) throw error
       setTournaments(data || [])
