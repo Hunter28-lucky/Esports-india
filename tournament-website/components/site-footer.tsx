@@ -30,6 +30,7 @@ export function SiteFooter() {
             <Link
               href="/tournaments"
               className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors font-medium"
+              prefetch={false}
             >
               <Trophy className="h-5 w-5" />
               <span>Tournaments</span>
@@ -37,6 +38,7 @@ export function SiteFooter() {
             <Link
               href="/community"
               className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors font-medium"
+              prefetch={false}
             >
               <Users className="h-5 w-5" />
               <span>Community</span>
@@ -44,6 +46,7 @@ export function SiteFooter() {
             <Link
               href="/blog"
               className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors font-medium"
+              prefetch={false}
             >
               <BookOpen className="h-5 w-5" />
               <span>Gaming Blog</span>
@@ -51,6 +54,7 @@ export function SiteFooter() {
             <Link
               href="/profile"
               className="flex items-center space-x-2 text-foreground hover:text-primary transition-colors font-medium"
+              prefetch={false}
             >
               <User className="h-5 w-5" />
               <span>Profile</span>
@@ -102,6 +106,7 @@ export function SiteFooter() {
               <Link
                 href="/tournaments/free-fire"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 <Target className="h-4 w-4 mr-2" />
                 Free Fire Tournaments
@@ -109,6 +114,7 @@ export function SiteFooter() {
               <Link
                 href="/tournaments/bgmi"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 <Crown className="h-4 w-4 mr-2" />
                 BGMI Championships
@@ -116,6 +122,7 @@ export function SiteFooter() {
               <Link
                 href="/tournaments/valorant"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 <Zap className="h-4 w-4 mr-2" />
                 Valorant Matches
@@ -123,6 +130,7 @@ export function SiteFooter() {
               <Link
                 href="/tournaments/pubg"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 <Trophy className="h-4 w-4 mr-2" />
                 PUBG Tournaments
@@ -130,6 +138,7 @@ export function SiteFooter() {
               <Link
                 href="/tournaments/schedule"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 Tournament Schedule
               </Link>
@@ -150,6 +159,7 @@ export function SiteFooter() {
               <Link
                 href="/teams"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 <Users className="h-4 w-4 mr-2" />
                 Find Teams
@@ -157,6 +167,7 @@ export function SiteFooter() {
               <Link
                 href="/blog"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 <BookOpen className="h-4 w-4 mr-2" />
                 Gaming Blog
@@ -164,12 +175,14 @@ export function SiteFooter() {
               <Link
                 href="/guides"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 Gaming Guides
               </Link>
               <Link
                 href="/discord"
                 className="flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
+                prefetch={false}
               >
                 Discord Community
               </Link>
@@ -180,22 +193,22 @@ export function SiteFooter() {
           <div className="space-y-4">
             <h3 className="text-lg font-semibold text-foreground">Support</h3>
             <nav className="space-y-2">
-              <Link href="/help" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/help" className="text-sm text-muted-foreground hover:text-foreground transition-colors" prefetch={false}>
                 Help Center
               </Link>
-              <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/contact" className="text-sm text-muted-foreground hover:text-foreground transition-colors" prefetch={false}>
                 Contact Us
               </Link>
-              <Link href="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/faq" className="text-sm text-muted-foreground hover:text-foreground transition-colors" prefetch={false}>
                 FAQ
               </Link>
-              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/privacy" className="text-sm text-muted-foreground hover:text-foreground transition-colors" prefetch={false}>
                 Privacy Policy
               </Link>
-              <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground transition-colors" prefetch={false}>
                 Terms of Service
               </Link>
-              <Link href="/refund" className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/refund" className="text-sm text-muted-foreground hover:text-foreground transition-colors" prefetch={false}>
                 Refund Policy
               </Link>
             </nav>

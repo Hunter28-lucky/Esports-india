@@ -91,7 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       setUser(fallbackUser)
       setLoading(false)
-    }, 3000) // 3 second timeout for database operations
+  }, 8000) // increased timeout to 8s for database operations on cold starts
 
     try {
       console.log("[Auth] Fetching user profile for:", authUser.id)

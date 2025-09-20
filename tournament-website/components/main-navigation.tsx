@@ -24,6 +24,7 @@ export function MainNavigation() {
                   <Link
                     className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-muted/50 to-muted p-6 no-underline outline-none focus:shadow-md"
                     href="/tournaments"
+                    prefetch={false}
                   >
                     <Trophy className="h-6 w-6" />
                     <div className="mb-2 mt-4 text-lg font-medium">Live Tournaments</div>
@@ -77,6 +78,7 @@ export function MainNavigation() {
           <NavigationMenuLink asChild>
             <Link
               href="/blog"
+              prefetch={false}
               className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50"
             >
               <BookOpen className="h-4 w-4 mr-2" />
@@ -89,6 +91,7 @@ export function MainNavigation() {
           <NavigationMenuLink asChild>
             <Link
               href="/profile"
+              prefetch={false}
               className="group inline-flex h-9 w-max items-center justify-center rounded-md bg-background px-4 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground focus:outline-none disabled:pointer-events-none disabled:opacity-50"
             >
               <User className="h-4 w-4 mr-2" />
@@ -122,6 +125,7 @@ const ListItem = ({
             "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
             className,
           )}
+          prefetch={false}
           {...props}
         >
           <div className="text-sm font-medium leading-none flex items-center">{title}</div>
