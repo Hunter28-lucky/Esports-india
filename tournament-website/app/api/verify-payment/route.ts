@@ -50,7 +50,13 @@ export async function POST(request: NextRequest) {
     }
 
     const data = (result && result.data) || {}
-    const success = (result?.status === 'success') && (data?.status === 'Success')
+    const gatewayStatus: string = (data?.status || '').toString()
+    const normalized = gatewayStatus.trim().toLowerCase()
+    const hasTxn = !!data?.txn_id
+    const hasUtr = !!data?.utr
+    const success = (result?.status === 'success') && (
+      normalized === 'success' || normalized === 'completed' || normalized === 'paid' || hasTxn || hasUtr
+    )
     return NextResponse.json({
       status: success ? 'success' : 'pending',
       order_id,
