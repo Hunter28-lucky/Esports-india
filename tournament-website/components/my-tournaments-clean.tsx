@@ -13,7 +13,6 @@ import {
   ExternalLink
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/lib/supabase"
 
 interface JoinedTournament {
   id: string
@@ -57,110 +56,55 @@ export default function MyTournaments({ user: userProp, onViewWaitingRoom, onBro
   const fetchMyTournaments = async () => {
     console.log('🔍 Fetching real tournaments you\'ve joined...')
     setLoading(true)
-    
     try {
       if (!user?.id) {
         console.log('❌ No authenticated user found')
         setTournaments([])
-        setLoading(false)
         return
       }
 
-      console.log('👤 Fetching tournaments for user:', user.id)
-      
-      // Step 1: Get tournament participations
-      console.log('🔍 Querying tournament_participants...')
-      const { data: participants, error: participantsError } = await supabase
-        .from('tournament_participants')
-        .select('tournament_id, joined_at')
-        .eq('user_id', user.id)
-        .order('joined_at', { ascending: false })
-        .limit(20)
+      const controller = new AbortController()
+      const id = setTimeout(() => controller.abort(), 8000)
+      const url = `/api/my-tournaments?user_id=${encodeURIComponent(user.id)}`
+      console.log('🌐 GET', url)
+      const res = await fetch(url, { signal: controller.signal, cache: 'no-store' })
+      clearTimeout(id)
 
-      console.log('📊 Participants query result:', { 
-        data: participants, 
-        error: participantsError,
-        count: participants?.length || 0 
-      })
-
-      if (participantsError) {
-        console.error('❌ Participants query error:', participantsError)
-        throw participantsError
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}))
+        throw new Error(body?.error || `Failed to load my tournaments (status ${res.status})`)
       }
 
-      if (!participants || participants.length === 0) {
-        console.log('ℹ️ No tournament participations found')
-        setTournaments([])
-        setLoading(false)
-        return
-      }
+      const body = await res.json()
+      const list = Array.isArray(body?.tournaments) ? body.tournaments : []
+      console.log('✅ My tournaments API result:', { count: list.length })
 
-      // Step 2: Get tournament details
-      const tournamentIds = participants.map(p => p.tournament_id)
-      console.log('🔍 Fetching tournament details for IDs:', tournamentIds)
+      const mapped: JoinedTournament[] = list.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        game: t.game,
+        entry_fee: t.entry_fee,
+        prize_pool: t.prize_pool,
+        max_players: t.max_players,
+        current_players: t.current_players || 0,
+        status: t.status,
+        start_time: t.start_time,
+        room_id: t.room_id,
+        room_password: t.room_password,
+        image_url: t.image_url || defaultImageForGame(t.game),
+        description: t.description || `${t.game} tournament with ₹${t.prize_pool} prize pool`,
+        joined_at: t.joined_at,
+        participants_count: t.current_players || 0,
+      }))
 
-      const { data: tournaments, error: tournamentsError } = await supabase
-        .from('tournaments')
-        .select('*')
-        .in('id', tournamentIds)
-
-      console.log('🏆 Tournaments query result:', { 
-        data: tournaments, 
-        error: tournamentsError,
-        count: tournaments?.length || 0 
-      })
-
-      if (tournamentsError) {
-        console.error('❌ Tournaments query error:', tournamentsError)
-        throw tournamentsError
-      }
-
-      if (!tournaments || tournaments.length === 0) {
-        console.log('ℹ️ No tournament details found')
-        setTournaments([])
-        setLoading(false)
-        return
-      }
-
-      // Step 3: Combine data
-      const tournamentMap = new Map()
-      tournaments.forEach(t => tournamentMap.set(t.id, t))
-
-      const joinedTournaments = participants
-        .map(p => {
-          const tournament = tournamentMap.get(p.tournament_id)
-          if (!tournament) return null
-
-          return {
-            id: tournament.id,
-            name: tournament.name,
-            game: tournament.game,
-            entry_fee: tournament.entry_fee,
-            prize_pool: tournament.prize_pool,
-            max_players: tournament.max_players,
-            current_players: tournament.current_players || 0,
-            status: tournament.status,
-            start_time: tournament.start_time,
-            room_id: tournament.room_id,
-            room_password: tournament.room_password,
-            image_url: defaultImageForGame(tournament.game),
-            description: tournament.description || `${tournament.game} tournament with ₹${tournament.prize_pool} prize pool`,
-            joined_at: p.joined_at,
-            participants_count: tournament.current_players || 0,
-          }
-        })
-        .filter(Boolean) as JoinedTournament[]
-
-      console.log('✅ Final tournaments to display:', joinedTournaments)
-      setTournaments(joinedTournaments)
-
-    } catch (error) {
-      console.error('❌ Error fetching tournaments:', error)
+      setTournaments(mapped)
+    } catch (error: any) {
+      console.error('❌ Error fetching my tournaments:', error)
       setTournaments([])
       toast({
-        title: "Error Loading Tournaments",
-        description: "Failed to load your tournaments. Please try again.",
-        variant: "destructive",
+        title: 'Error Loading Tournaments',
+        description: error?.message || 'Failed to load your tournaments. Please try again.',
+        variant: 'destructive',
       })
     } finally {
       setLoading(false)
