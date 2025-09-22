@@ -1,14 +1,17 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabase"
 
 export default function AuthCallback() {
   const router = useRouter()
+  const ranRef = useRef(false)
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      if (ranRef.current) return
+      ranRef.current = true
       try {
         const url = new URL(window.location.href)
 
@@ -21,8 +24,18 @@ export default function AuthCallback() {
           if (access_token && refresh_token) {
             console.log("[AuthCallback] Found tokens in hash, setting session")
             await supabase.auth.setSession({ access_token, refresh_token })
-            // Clean the URL (remove hash) and redirect home
-            router.replace("/")
+            // Confirm session, then redirect
+            const { data } = await supabase.auth.getSession()
+            if (data.session) {
+              window.location.replace("/")
+            } else {
+              console.warn("[AuthCallback] Session not ready after setSession, retrying once...")
+              setTimeout(async () => {
+                const { data: retry } = await supabase.auth.getSession()
+                if (retry.session) window.location.replace("/")
+                else window.location.replace("/login")
+              }, 250)
+            }
             return
           }
         }
@@ -44,7 +57,7 @@ export default function AuthCallback() {
               throw e
             }
           }
-          router.replace("/")
+          window.location.replace("/")
           return
         }
 
@@ -52,16 +65,16 @@ export default function AuthCallback() {
         console.log("[AuthCallback] No tokens/code found, checking session")
         const { data } = await supabase.auth.getSession()
         if (data.session) {
-          router.replace("/")
+          window.location.replace("/")
           return
         }
 
         // 4) Still nothing → send to login
         console.warn("[AuthCallback] No session after callback handling, redirecting to /login")
-        router.replace("/login")
+        window.location.replace("/login")
       } catch (error) {
         console.error("[AuthCallback] Error handling auth callback:", error)
-        router.replace("/login")
+        window.location.replace("/login")
       }
     }
 
