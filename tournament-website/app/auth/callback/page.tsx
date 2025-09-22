@@ -10,17 +10,58 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error } = await supabase.auth.getSession()
-        if (error) throw error
+        const url = new URL(window.location.href)
 
-        if (data.session) {
-          router.push("/")
-        } else {
-          router.push("/login")
+        // 1) If implicit flow: tokens in URL hash
+        if (url.hash) {
+          const hashParams = new URLSearchParams(url.hash.substring(1))
+          const access_token = hashParams.get("access_token") || undefined
+          const refresh_token = hashParams.get("refresh_token") || undefined
+
+          if (access_token && refresh_token) {
+            console.log("[AuthCallback] Found tokens in hash, setting session")
+            await supabase.auth.setSession({ access_token, refresh_token })
+            // Clean the URL (remove hash) and redirect home
+            router.replace("/")
+            return
+          }
         }
+
+        // 2) If PKCE flow: code in query string
+        const code = url.searchParams.get("code")
+        if (code) {
+          console.log("[AuthCallback] Found code param, exchanging for session")
+          try {
+            // @ts-ignore - runtime guard, works with supabase-js v2
+            await supabase.auth.exchangeCodeForSession(code)
+          } catch (e) {
+            // Some versions accept the full URL
+            // @ts-ignore
+            if (typeof supabase.auth.exchangeCodeForSession === "function") {
+              // @ts-ignore
+              await supabase.auth.exchangeCodeForSession(window.location.href)
+            } else {
+              throw e
+            }
+          }
+          router.replace("/")
+          return
+        }
+
+        // 3) Fallback: ask client for current session
+        console.log("[AuthCallback] No tokens/code found, checking session")
+        const { data } = await supabase.auth.getSession()
+        if (data.session) {
+          router.replace("/")
+          return
+        }
+
+        // 4) Still nothing → send to login
+        console.warn("[AuthCallback] No session after callback handling, redirecting to /login")
+        router.replace("/login")
       } catch (error) {
-        console.error("Error handling auth callback:", error)
-        router.push("/login")
+        console.error("[AuthCallback] Error handling auth callback:", error)
+        router.replace("/login")
       }
     }
 
