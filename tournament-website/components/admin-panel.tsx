@@ -836,16 +836,106 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
                         <div className="flex gap-2 pt-2">
                           <Button
                             onClick={() => {
+                              // Validate required fields
+                              if (!editData.name?.trim()) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Tournament name is required",
+                                  variant: "destructive",
+                                })
+                                return
+                              }
+
+                              if (!editData.game?.trim()) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Game selection is required",
+                                  variant: "destructive",
+                                })
+                                return
+                              }
+
+                              // Validate numeric fields
+                              const entryFee = Number(editData.entry_fee)
+                              const prizePool = Number(editData.prize_pool)
+                              const maxPlayers = Number(editData.max_players)
+
+                              if (isNaN(entryFee) || entryFee < 0) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Entry fee must be a valid number",
+                                  variant: "destructive",
+                                })
+                                return
+                              }
+
+                              if (isNaN(prizePool) || prizePool < 0) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Prize pool must be a valid number",
+                                  variant: "destructive",
+                                })
+                                return
+                              }
+
+                              if (isNaN(maxPlayers) || maxPlayers <= 0) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Max players must be a valid positive number",
+                                  variant: "destructive",
+                                })
+                                return
+                              }
+
+                              // Validate and format start time
+                              let startTimeISO: string
+                              try {
+                                if (!editData.start_time?.trim()) {
+                                  toast({
+                                    title: "Validation Error",
+                                    description: "Start time is required",
+                                    variant: "destructive",
+                                  })
+                                  return
+                                }
+                                const startDate = new Date(editData.start_time)
+                                if (isNaN(startDate.getTime())) {
+                                  toast({
+                                    title: "Validation Error",
+                                    description: "Invalid start time format",
+                                    variant: "destructive",
+                                  })
+                                  return
+                                }
+                                startTimeISO = startDate.toISOString()
+                              } catch (error) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Invalid start time format",
+                                  variant: "destructive",
+                                })
+                                return
+                              }
+
+                              if (!editData.status?.trim()) {
+                                toast({
+                                  title: "Validation Error",
+                                  description: "Status is required",
+                                  variant: "destructive",
+                                })
+                                return
+                              }
+
                               const updates = {
-                                name: editData.name,
+                                name: editData.name.trim(),
                                 game: editData.game,
-                                entry_fee: Number(editData.entry_fee),
-                                prize_pool: Number(editData.prize_pool),
-                                max_players: Number(editData.max_players),
-                                start_time: new Date(editData.start_time || '').toISOString(),
-                                image_url: editData.image_url,
-                                room_id: editData.room_id,
-                                room_password: editData.room_password,
+                                entry_fee: entryFee,
+                                prize_pool: prizePool,
+                                max_players: maxPlayers,
+                                start_time: startTimeISO,
+                                image_url: editData.image_url?.trim() || undefined,
+                                room_id: editData.room_id?.trim() || undefined,
+                                room_password: editData.room_password?.trim() || undefined,
                                 status: editData.status
                               }
                               updateTournamentDetails(tournament.id, updates)

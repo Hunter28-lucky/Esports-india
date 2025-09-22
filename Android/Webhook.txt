@@ -1,0 +1,51 @@
+import com.google.gson.Gson;
+
+public class WebhookReceiver {
+
+    private Gson gson = new Gson();
+
+    public void handleWebhook(String webhookData) {
+        // Parse the incoming webhook data
+        WebhookData data = gson.fromJson(webhookData, WebhookData.class);
+
+        // Log the received data
+        System.out.println("Received Webhook Data:");
+        System.out.println("Customer Mobile: " + data.getCustumer_mobile());
+        System.out.println("UTR: " + data.getUtr());
+        System.out.println("Remark: " + data.getRemark());
+        System.out.println("Transaction ID: " + data.getTxn_id());
+        System.out.println("Created At: " + data.getCreate_at());
+        System.out.println("Order ID: " + data.getOrder_id());
+        System.out.println("Status: " + data.getStatus());
+        System.out.println("Amount: " + data.getAmount());
+
+        // Handle the response according to the status
+        if ("Success".equals(data.getStatus())) {
+            // Process successful response
+            System.out.println("Webhook processed successfully.");
+        } else {
+            System.out.println("Error processing webhook: Invalid status.");
+        }
+    }
+
+    class WebhookData {
+        private String custumer_mobile;
+        private String utr;
+        private String remark;
+        private String txn_id;
+        private String create_at;
+        private String order_id;
+        private String status;
+        private String amount;
+
+        // Getters
+        public String getCustumer_mobile() { return custumer_mobile; }
+        public String getUtr() { return utr; }
+        public String getRemark() { return remark; }
+        public String getTxn_id() { return txn_id; }
+        public String getCreate_at() { return create_at; }
+        public String getOrder_id() { return order_id; }
+        public String getStatus() { return status; }
+        public String getAmount() { return amount; }
+    }
+}

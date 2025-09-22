@@ -1,0 +1,9 @@
+public class Main {
+    public static void main(String[] args) {
+        CreateOrderAPI.createOrder(); // Call to create an order
+        OrderStatusAPI.checkOrderStatus(); // Call to check order status
+    }
+}
+
+<uses-permission android:name="android.permission.INTERNET"/>
+implementation 'com.google.code.gson:gson:2.8.9'

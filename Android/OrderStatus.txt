@@ -1,0 +1,43 @@
+
+import okhttp3.FormBody;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+public class OrderStatusAPI {
+
+    public static void checkOrderStatus() {
+        try {
+            // OkHttpClient instance
+            OkHttpClient client = new OkHttpClient();
+
+            // FormBody Builder for Request
+            RequestBody formBody = new FormBody.Builder()
+                .add("token_key", "0292e3c8b5ae1a4afc40182c51954533") // Example token
+                .add("secret_key", "c5b9f4d315e6acce8a5d6493ff2edb40") // Example secret
+                .add("order_id", "Abc123")
+                .build();
+
+            // Build Request
+            Request request = new Request.Builder()
+                .url("https://zapupi.com/api/order-status")
+                .post(formBody)
+                .build();
+
+            // Execute Request
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+
+                // Print Response
+                System.out.println("Order Status Response: " + response.body().string());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void main(String[] args) {
+        checkOrderStatus();
+    }
+}
