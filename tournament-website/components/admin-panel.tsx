@@ -129,7 +129,9 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
   }
 
   useEffect(() => {
-    // Hydrate from cache for instant UI
+    // Hydrate from cache for instant UI (only once on mount)
+    if (hydratedFromCache) return
+
     try {
       const t = localStorage.getItem(CACHE_KEYS.tournaments)
       const s = localStorage.getItem(CACHE_KEYS.stats)
@@ -155,13 +157,16 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
     } catch (e) {
       console.warn('[AdminPanel] Cache hydration failed:', e)
     }
+  }, []) // Run only once on mount
 
-    // Always refresh from network after auth is ready
-    if (!authLoading) {
-      initializeData()
-    }
+  useEffect(() => {
+    // Fetch data when auth is ready
+    if (authLoading) return
+    initializeData()
+  }, [authLoading]) // Only depend on authLoading
 
-    // Safety: ensure we never get stuck in loading state
+  useEffect(() => {
+    // Safety timeout to prevent infinite loading
     const safetyTimer = setTimeout(() => {
       if (loading) {
         console.warn('[AdminPanel] Safety timeout reached, forcing loading=false')
@@ -170,10 +175,10 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
           setError('Loading took too long. Please refresh the page or check your connection.')
         }
       }
-    }, 20000) // Increased to 20 seconds to match fetch timeout
+    }, 20000)
 
     return () => clearTimeout(safetyTimer)
-  }, [authLoading])
+  }, [loading, error, tournaments.length]) // Proper dependencies
 
   const fetchTournaments = async () => {
     // Use server API to avoid client-side RLS/cold start delays
