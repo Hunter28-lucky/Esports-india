@@ -107,10 +107,8 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
         return
       }
 
-      // Non-blocking quick connectivity test
-      const ping = supabase.from('tournaments').select('id', { head: true, count: 'exact' }).limit(1)
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 2000))
-      Promise.race([ping, timeout]).catch((e) => console.warn('[AdminPanel] ping failed (non-blocking):', e?.message || e))
+      // Skip connectivity test - just fetch data directly
+      console.log('[AdminPanel] Skipping ping test, fetching data directly...')
 
       // Fetch tournaments first (primary UI), start stats in background for faster perceived load
       await fetchTournaments()
@@ -169,10 +167,10 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
         console.warn('[AdminPanel] Safety timeout reached, forcing loading=false')
         setLoading(false)
         if (!error && tournaments.length === 0) {
-          setError('Loading took too long. Please tap Retry or check your network/Supabase configuration.')
+          setError('Loading took too long. Please refresh the page or check your connection.')
         }
       }
-    }, 8000)
+    }, 20000) // Increased to 20 seconds to match fetch timeout
 
     return () => clearTimeout(safetyTimer)
   }, [authLoading])
@@ -180,10 +178,14 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
   const fetchTournaments = async () => {
     // Use server API to avoid client-side RLS/cold start delays
     const controller = new AbortController()
-    const id = setTimeout(() => controller.abort(), 8000)
+    const id = setTimeout(() => controller.abort(), 15000) // Increased to 15 seconds
     try {
       console.log('[AdminPanel] Fetching tournaments via /api/admin/tournaments ...')
-      const res = await fetch('/api/admin/tournaments', { signal: controller.signal, cache: 'no-store' })
+      const res = await fetch('/api/admin/tournaments', { 
+        signal: controller.signal, 
+        cache: 'no-store',
+        headers: { 'Content-Type': 'application/json' }
+      })
       clearTimeout(id)
       if (!res.ok) {
         const body = await res.json().catch(() => ({}))
@@ -196,7 +198,7 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
       console.log('[AdminPanel] Tournaments set:', list.length)
     } catch (error: any) {
       if (error?.name === 'AbortError') {
-        setError('Request timed out. Please try again.')
+        setError('Request timed out after 15 seconds. Please check your internet connection.')
       } else {
         setError(error?.message || 'Unknown error')
       }
