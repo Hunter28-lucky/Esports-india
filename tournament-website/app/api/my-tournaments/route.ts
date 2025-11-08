@@ -34,7 +34,7 @@ export async function GET(request: Request) {
     const ids = participants.map((p: any) => p.tournament_id)
     const tournamentsQ = supabase
       .from('tournaments')
-      .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time, room_id, room_password, description')
+      .select('id, name, game, entry_fee, prize_pool, max_players, current_players, status, start_time, room_id, room_password, image_url, created_at')
       .in('id', ids)
 
     result = await Promise.race([tournamentsQ, timeout(5000)])
