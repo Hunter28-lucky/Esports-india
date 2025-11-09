@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { Search, Target, Zap, Plus, ImageOff } from "lucide-react"
+import { Search, Target, Zap, Plus, ImageOff, Trophy } from "lucide-react"
 import dynamic from "next/dynamic"
 
 // Dev-only tool: avoid bundling in production
@@ -120,12 +120,12 @@ export function TournamentsSection({ onJoinTournament, onCreateTournament, isAdm
         <div className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input
                 placeholder="Search tournaments..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-slate-700 border-slate-600 text-white"
+                className="pl-10 h-10 bg-slate-700 border-slate-600 text-white"
               />
             </div>
             <div className="flex gap-2">
@@ -151,14 +151,14 @@ export function TournamentsSection({ onJoinTournament, onCreateTournament, isAdm
 
       {/* Tournaments Grid */}
       {filteredTournaments.length === 0 && (
-        <Card className="bg-slate-800 border-slate-700 p-8 flex flex-col items-center justify-center text-center gap-4">
-          <ImageOff className="w-10 h-10 text-slate-500" />
+        <Card className="bg-slate-800 border-slate-700 p-12 flex flex-col items-center justify-center text-center gap-4">
+          <Trophy className="w-16 h-16 text-slate-600 opacity-50" />
           <div>
-            <h3 className="text-white font-semibold text-lg">No tournaments yet</h3>
-            <p className="text-slate-400 text-sm">{isAdmin ? 'Create the first tournament to get started.' : 'Check back later for upcoming tournaments.'}</p>
+            <h3 className="text-white font-semibold text-xl mb-2">No Tournaments Found</h3>
+            <p className="text-slate-400 text-sm">{isAdmin ? 'Create the first tournament to get started.' : 'Check back soon for exciting battles!'}</p>
           </div>
           {isAdmin && (
-            <Button onClick={onCreateTournament} className="bg-cyan-500 hover:bg-cyan-600 text-white">
+            <Button onClick={onCreateTournament} className="bg-cyan-500 hover:bg-cyan-600 text-white mt-4">
               <Plus className="w-4 h-4 mr-2" /> Create Tournament
             </Button>
           )}
@@ -170,12 +170,21 @@ export function TournamentsSection({ onJoinTournament, onCreateTournament, isAdm
             key={tournament.id}
             className="bg-slate-800 border-slate-700 overflow-hidden hover:border-slate-600 transition-colors group"
           >
-            <div className="relative h-48">
+            <div className="relative aspect-video w-full overflow-hidden bg-slate-900">
               <img
-                src={tournament.image || "/placeholder.svg"}
-                alt={tournament.name}
+                src={tournament.image || "/placeholder.jpg"}
+                alt={`${tournament.name} tournament banner`}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                onError={(e) => {
+                  e.currentTarget.src = '/placeholder.jpg'
+                  e.currentTarget.onerror = null
+                }}
               />
+              {!tournament.image && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <ImageOff className="w-12 h-12 text-slate-600" />
+                </div>
+              )}
               <Badge className={`absolute top-3 left-3 ${getStatusColor(tournament.status)} text-white border-0`}>
                 {getStatusText(tournament.status)}
               </Badge>

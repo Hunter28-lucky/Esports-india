@@ -68,6 +68,21 @@ interface Achievement {
   rarity: "common" | "rare" | "epic" | "legendary"
 }
 
+// Helper function for relative timestamps
+const getRelativeTime = (date: Date) => {
+  const now = Date.now()
+  const diff = now - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  if (minutes < 1) return 'Just now'
+  if (minutes < 60) return `${minutes}m ago`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours}h ago`
+  const days = Math.floor(hours / 24)
+  if (days === 1) return '1 day ago'
+  if (days < 7) return `${days} days ago`
+  return date.toLocaleDateString()
+}
+
 export function GameArenaDashboard() {
   const { user, loading, isAdmin } = useAuth()
   const { toast } = useToast()
@@ -1585,7 +1600,7 @@ export function GameArenaDashboard() {
 
       <header className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4 bg-card border-b border-border backdrop-blur-sm">
         <div className="flex items-center gap-3 lg:gap-4">
-          <Button variant="ghost" size="sm" className="lg:hidden p-2" onClick={toggleMobileMenu}>
+          <Button variant="ghost" size="sm" className="lg:hidden p-2 min-w-[44px] min-h-[44px]" onClick={toggleMobileMenu}>
             <Menu className="w-5 h-5" />
           </Button>
           <div className="flex items-center gap-2 lg:gap-3">
@@ -1620,10 +1635,10 @@ export function GameArenaDashboard() {
           </Button>
 
           <div className="relative">
-            <Button variant="ghost" size="sm" className="p-2 relative" onClick={handleNotificationClick}>
+            <Button variant="ghost" size="sm" className="p-2 relative min-w-[44px] min-h-[44px]" onClick={handleNotificationClick}>
               <Bell className="w-4 h-4 lg:w-5 lg:h-5 text-muted-foreground hover:text-foreground transition-colors" />
               {notifications.filter((n) => !n.read).length > 0 && (
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse flex items-center justify-center">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full animate-pulse flex items-center justify-center">
                   <span className="text-xs text-white font-bold">{notifications.filter((n) => !n.read).length}</span>
                 </div>
               )}
@@ -1661,7 +1676,7 @@ export function GameArenaDashboard() {
                             <h4 className="font-medium text-foreground text-sm">{notification.title}</h4>
                             <p className="text-muted-foreground text-xs mt-1">{notification.message}</p>
                             <p className="text-muted-foreground text-xs mt-2">
-                              {notification.timestamp.toLocaleString()}
+                              {getRelativeTime(notification.timestamp)}
                             </p>
                           </div>
                         </div>
@@ -1682,20 +1697,20 @@ export function GameArenaDashboard() {
           <Button
             onClick={handleAddMoney}
             size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground transition-colors text-xs lg:text-sm px-2 lg:px-4 font-semibold animate-pulse-red"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground transition-colors text-xs lg:text-sm px-3 py-2 font-semibold animate-pulse-red min-h-[44px]"
           >
-            <span className="hidden sm:inline">Add Money</span>
-            <Plus className="w-4 h-4 sm:hidden" />
+            <Plus className="w-4 h-4 mr-1 sm:mr-2" />
+            <span className="text-xs sm:text-sm font-semibold">Add</span>
           </Button>
         </div>
       </header>
 
-      {showNotifications && <div className="fixed inset-0 z-[55]" onClick={() => setShowNotifications(false)} />}
+      {showNotifications && <div className="fixed inset-0 z-[60]" onClick={() => setShowNotifications(false)} />}
 
       <div className="flex relative">
         <nav
           className={`
-          fixed lg:static inset-y-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out
+          fixed lg:static inset-y-0 left-0 z-[50] w-64 bg-card border-r border-border transform transition-transform duration-300 ease-in-out
           ${isMobileMenuOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}
         `}
         >
@@ -1737,9 +1752,9 @@ export function GameArenaDashboard() {
           </div>
         </nav>
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" onClick={toggleMobileMenu} />
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[40] lg:hidden" onClick={toggleMobileMenu} />
         )}
-        <main className="flex-1 p-4 lg:p-6 min-h-screen">{renderContent()}</main>
+        <main className="flex-1 p-4 lg:p-6 min-h-screen pb-24 lg:pb-6">{renderContent()}</main>
       </div>
       <footer className="fixed bottom-4 left-4 right-4 lg:right-auto">
         <div className="flex items-center gap-3 bg-card border border-border p-3 rounded-lg hover:border-primary/30 transition-colors cursor-pointer touch-manipulation lg:w-auto backdrop-blur-sm card-hover">

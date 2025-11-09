@@ -63,25 +63,28 @@ export function WalletSection({ walletBalance, onAddMoney }: WalletSectionProps)
   return (
     <div className="space-y-6">
       {/* Wallet Balance Card */}
-      <Card className="bg-gradient-to-r from-cyan-600 to-blue-600 border-0 text-white">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-white" />
+      <Card className="bg-gradient-to-br from-cyan-600 to-blue-700 border-0 text-white shadow-xl">
+        <div className="p-6 relative">
+          <div className="absolute inset-0 bg-black/10 rounded-lg"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+                  <Wallet className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-semibold">Wallet Balance</h2>
+                  <p className="text-cyan-50 text-sm font-medium">Available for tournaments</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-lg font-semibold">Wallet Balance</h2>
-                <p className="text-cyan-100 text-sm">Available for tournaments</p>
-              </div>
+              <Button onClick={onAddMoney} className="bg-white/20 hover:bg-white/30 text-white border-0">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Money
+              </Button>
             </div>
-            <Button onClick={onAddMoney} className="bg-white/20 hover:bg-white/30 text-white border-0">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Money
-            </Button>
+            <div className="text-3xl font-bold mb-2">₹{walletBalance.toLocaleString()}</div>
+            <p className="text-cyan-50 text-sm font-medium">Last updated: Just now</p>
           </div>
-          <div className="text-3xl font-bold mb-2">₹{walletBalance.toLocaleString()}</div>
-          <p className="text-cyan-100 text-sm">Last updated: Just now</p>
         </div>
       </Card>
 
@@ -89,12 +92,12 @@ export function WalletSection({ walletBalance, onAddMoney }: WalletSectionProps)
       <Card className="bg-slate-800 border-slate-700">
         <div className="p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Quick Add Money</h3>
-          <div className="grid grid-cols-3 md:grid-cols-5 gap-3 mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-4">
             {quickAmounts.map((amount) => (
               <Button
                 key={amount}
                 variant={selectedAmount === amount ? "default" : "outline"}
-                className={`${
+                className={`h-12 sm:h-auto ${
                   selectedAmount === amount
                     ? "bg-cyan-500 hover:bg-cyan-600 text-white"
                     : "border-slate-600 text-slate-300 hover:bg-slate-700"

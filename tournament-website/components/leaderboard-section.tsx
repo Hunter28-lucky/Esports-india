@@ -166,13 +166,13 @@ export function LeaderboardSection() {
                 key={player.rank}
                 className={`text-center ${index === 0 ? "md:order-2" : index === 1 ? "md:order-1" : "md:order-3"}`}
               >
-                <div className="relative mb-4">
-                  <Avatar className="w-20 h-20 mx-auto border-4 border-slate-600">
+                <div className="relative inline-block mb-4">
+                  <Avatar className="w-16 h-16 sm:w-20 sm:h-20 mx-auto border-4 border-slate-600">
                     <AvatarImage src={player.avatar || "/placeholder.svg"} />
                     <AvatarFallback>{player.name.slice(0, 2)}</AvatarFallback>
                   </Avatar>
                   <div
-                    className={`absolute -top-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${getRankColor(player.rank)}`}
+                    className={`absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold ${getRankColor(player.rank)}`}
                   >
                     {player.rank}
                   </div>

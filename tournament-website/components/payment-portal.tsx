@@ -177,7 +177,7 @@ export function PaymentPortal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md bg-black border-red-900/20 text-white">
+      <DialogContent className="sm:max-w-md bg-black border-red-900/20 text-white max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {paymentType === "wallet" ? (

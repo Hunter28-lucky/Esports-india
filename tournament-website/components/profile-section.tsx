@@ -237,7 +237,7 @@ export function ProfileSection({ user }: { user: User }) {
                 <div className="space-y-4">
                   <div>
                     <h2 className="text-2xl font-bold text-white">{profileData.name}</h2>
-                    <p className="text-slate-400">{profileData.bio}</p>
+                    <p className="text-slate-400 text-sm line-clamp-3 sm:line-clamp-none">{profileData.bio}</p>
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2">
