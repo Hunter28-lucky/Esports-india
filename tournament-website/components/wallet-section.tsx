@@ -61,7 +61,7 @@ export function WalletSection({ walletBalance, onAddMoney }: WalletSectionProps)
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-5xl mx-auto">
       {/* Wallet Balance Card */}
       <Card className="bg-gradient-to-br from-cyan-600 to-blue-700 border-0 text-white shadow-xl">
         <div className="p-6 relative">

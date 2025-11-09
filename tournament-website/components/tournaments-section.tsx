@@ -100,7 +100,7 @@ export function TournamentsSection({ onJoinTournament, onCreateTournament, isAdm
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
@@ -164,7 +164,7 @@ export function TournamentsSection({ onJoinTournament, onCreateTournament, isAdm
           )}
         </Card>
       )}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
         {filteredTournaments.map((tournament) => (
           <Card
             key={tournament.id}

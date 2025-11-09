@@ -1754,7 +1754,11 @@ export function GameArenaDashboard() {
         {isMobileMenuOpen && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-[40] lg:hidden" onClick={toggleMobileMenu} />
         )}
-        <main className="flex-1 p-4 lg:p-6 min-h-screen pb-24 lg:pb-6">{renderContent()}</main>
+        <main className="flex-1 p-4 lg:p-6 min-h-screen pb-24 lg:pb-6">
+          <div className="max-w-7xl mx-auto">
+            {renderContent()}
+          </div>
+        </main>
       </div>
       <footer className="fixed bottom-4 left-4 right-4 lg:right-auto">
         <div className="flex items-center gap-3 bg-card border border-border p-3 rounded-lg hover:border-primary/30 transition-colors cursor-pointer touch-manipulation lg:w-auto backdrop-blur-sm card-hover">
