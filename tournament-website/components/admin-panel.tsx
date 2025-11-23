@@ -278,10 +278,21 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
 
   const deleteTournament = async (id: string) => {
     try {
-      const { error } = await supabase
+      console.log('[DELETE] Starting delete for tournament:', id)
+      
+      // Add timeout to prevent hanging
+      const deletePromise = supabase
         .from('tournaments')
         .delete()
         .eq('id', id)
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Delete request timeout after 10 seconds')), 10000)
+      )
+      
+      const { error } = await Promise.race([deletePromise, timeoutPromise]) as any
+      
+      console.log('[DELETE] Delete completed, error:', error)
 
       if (error) {
         console.error('Delete error:', error)
@@ -302,7 +313,7 @@ export function AdminPanel({ onCreateTournament }: AdminPanelProps) {
       console.error('Unexpected error deleting tournament:', error)
       toast({
         title: "Error",
-        description: "Failed to delete tournament",
+        description: error instanceof Error ? error.message : "Failed to delete tournament",
         variant: "destructive",
       })
     }

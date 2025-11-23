@@ -3,37 +3,73 @@
 ## Project Overview
 This is an **Indian esports tournament platform** built with **Next.js 15, React 19, TypeScript, Supabase, and Tailwind CSS**. Players join paid tournaments (Free Fire, BGMI, PUBG, Valorant), pay entry fees via ZapUPI payment gateway, and win cash prizes. The platform includes wallet management, real-time leaderboards, and an admin panel for tournament management.
 
+**Origin**: Scaffolded with v0.app (see `tournament-website/README.md`) and heavily customized.
+
 ## Architecture & Key Directories
 
 ### Primary Codebase Location
-**Active development is in `tournament-website/`** (not `Tournament website /` with space - that's likely an old duplicate). All references should point to `tournament-website/`.
+**Active development is in `tournament-website/`** (not `Tournament website /` with space - that's an old duplicate). All references should point to `tournament-website/`.
 
 ### Structure
 - **`tournament-website/app/`**: Next.js 15 App Router pages (route handlers in `app/api/`)
+  - API routes: `create-payment/`, `verify-payment/`, `payment-webhook/`, `tournaments/`, `my-tournaments/`, `admin/`
+  - Pages: `auth/callback/`, `login/`, `payment-success/`, `leaderboard/`, `blog/`, `home/`
 - **`tournament-website/components/`**: React components (UI components in `components/ui/`)
-- **`tournament-website/lib/`**: Utilities and Supabase client (`lib/supabase.ts`)
+- **`tournament-website/lib/`**: Utilities (Supabase client, error handlers)
+- **`tournament-website/hooks/`**: Custom hooks (`use-toast.ts`, `use-haptic.ts`)
 - **`scripts/database-schema.sql`**: Main database schema reference
-- **`Android/`**: Android payment integration samples (ZapUPI API examples)
+- **`Android/`**: Android payment integration samples (ZapUPI API examples with OkHttp3)
 
 ### Key Components
-- **`game-arena-dashboard.tsx`**: Main dashboard orchestrator (~1773 lines) - handles navigation, state, and renders all sections
-- **`admin-panel.tsx`**: Tournament CRUD operations, requires admin authentication
-- **`auth-provider.tsx`**: Supabase auth context with Google OAuth
+- **`game-arena-dashboard.tsx`**: Main dashboard orchestrator (~1792 lines) - handles navigation, state management, and renders all sections (Dashboard, Tournaments, Wallet, Leaderboard, Profile, Admin)
+  - Manages notifications, achievements, mobile menu state
+  - Integrates all sub-components (TournamentPage, PaymentPortal, WaitingRoom, etc.)
+  - Uses `useAuth()` hook for user state and `useHaptic()` for mobile feedback
+- **`admin-panel.tsx`**: Tournament CRUD operations (~979 lines)
+  - Requires admin authentication (`isAdmin` check)
+  - Dynamic imports for dev-only diagnostics (`AdminDebug`, `DatabaseTestComponent`, `AuthStatusComponent`)
+  - Inline tournament editing with optimistic UI updates
+- **`auth-provider.tsx`**: Supabase auth context (~224 lines)
+  - Google OAuth integration with session persistence
+  - Fetches user profile from `users` table after auth
+  - Creates new user profile with ₹2450 starting wallet balance
+  - 5-second loading timeout to prevent infinite loading states
+  - Admin check based on hardcoded email (`krrishyogi18@gmail.com`)
 - **`payment-portal.tsx`**: ZapUPI payment integration with polling verification
+  - Creates payment order via `/api/create-payment`
+  - Polls `/api/verify-payment` every 10s (max 30 attempts = 5 minutes)
+  - Handles payment completion and updates wallet/tournament entry
 - **`tournament-waiting-room.tsx`**: Pre-tournament lobby showing room IDs/passwords
+  - Displays tournament details before start
+  - Shows countdown timer and participant list
+- **`tournaments-section.tsx`**: Main tournament listing with filters and search
+- **`leaderboard-section.tsx`**: Global and game-specific rankings
+- **`wallet-section.tsx`**: Transaction history and balance management
 
 ## Technology Stack
 
 ### Core Dependencies
 - **Next.js 15.2.4** with App Router (not Pages Router)
 - **React 19** with TypeScript strict mode
-- **Supabase** (`@supabase/supabase-js`) for auth + PostgreSQL database
-- **Radix UI** for accessible components
+- **Supabase** (`@supabase/supabase-js`, `@supabase/ssr`) for auth + PostgreSQL database
+- **Radix UI** for accessible components (Dialog, Select, Dropdown, Toast, etc.)
 - **Tailwind CSS v4** with `tailwindcss-animate`
-- **Zod** for form validation with `react-hook-form`
+- **Zod** for form validation with `react-hook-form` + `@hookform/resolvers`
+- **Lucide React** for icons (optimized via `experimental.optimizePackageImports`)
+- **date-fns** for date formatting and time calculations
+- **embla-carousel-react** for carousels (if used)
+
+### Build Configuration (`next.config.mjs`)
+```javascript
+// Critical: Build errors are IGNORED to allow rapid iteration
+typescript: { ignoreBuildErrors: true }
+eslint: { ignoreDuringBuilds: true }
+// Requires manual QA and type checking
+```
 
 ### Import Aliases
 Use `@/*` for all imports (e.g., `@/components/ui/button`, `@/lib/supabase`)
+Configured in `tsconfig.json` with `"paths": { "@/*": ["./*"] }`
 
 ## Database & Supabase
 
@@ -74,11 +110,23 @@ import { supabase } from "@/lib/supabase"
 2. Redirects to `/auth/callback` → handled by `app/auth/callback/page.tsx`
 3. On success, creates user profile in `users` table if missing (starting wallet: ₹2450)
 4. Auth context provides `user`, `loading`, `isAdmin` state
+5. **5-second timeout** set to prevent infinite loading if auth check hangs
 
 ### Check Admin Access
 ```typescript
 const { user, isAdmin } = useAuth()
 if (!isAdmin) return <div>Access Denied</div>
+```
+
+### Auth Provider Context Pattern
+```typescript
+// Auth context available throughout app via provider
+<AuthProvider>
+  <GameArenaDashboard />
+</AuthProvider>
+
+// Components use hook to access auth state
+const { user, loading, isAdmin, signInWithGoogle, signOut } = useAuth()
 ```
 
 ## Payment Integration (ZapUPI)
@@ -87,7 +135,7 @@ if (!isAdmin) return <div>Access Denied</div>
 1. User initiates payment → `payment-portal.tsx` calls `/api/create-payment`
 2. Backend (`app/api/create-payment/route.ts`) creates order with ZapUPI API
 3. User redirected to ZapUPI payment page
-4. After payment, frontend **polls** `/api/verify-payment` every 10s (max 30 attempts)
+4. After payment, frontend **polls** `/api/verify-payment` every 10s (max 30 attempts = 5 minutes)
 5. On success, updates wallet balance or tournament entry
 
 ### ZapUPI Credentials
@@ -99,8 +147,26 @@ ZAPUPI_SECRET_KEY=9b2ed95f353a62ca2af39a25bf29b4e4
 
 ### API Endpoints
 - `POST /api/create-payment` - Creates ZapUPI order
+  - Required fields: `amount`, `order_id`
+  - Optional: `customer_phone`, `customer_mobile`, `remark`
+  - Returns: `payment_url`, `order_id`, `status`, `message`
 - `POST /api/verify-payment` - Checks payment status
+  - Used by polling mechanism in `payment-portal.tsx`
 - `POST /api/payment-webhook` - Webhook for ZapUPI callbacks
+  - Handles async payment confirmations
+
+### API Request Format
+```typescript
+// Form-encoded request to ZapUPI
+const formData = new URLSearchParams()
+formData.set("token_key", tokenKey)
+formData.set("secret_key", secretKey)
+formData.set("amount", Math.round(Number(amount)).toString())
+formData.set("order_id", String(order_id))
+formData.set("custumer_mobile", mobile) // Note: typo in ZapUPI API docs
+formData.set("redirect_url", siteRoot)
+formData.set("remark", remark)
+```
 
 ### Android Integration
 Reference `Android/CreateOrder.txt` for OkHttp3 Java implementation example.
@@ -151,6 +217,19 @@ npm run lint     # ESLint check
 - Use strict TypeScript (`strict: true` in `tsconfig.json`)
 - Many components have `// @ts-nocheck` for rapid prototyping - remove when stabilizing
 - Define interfaces for props (e.g., `interface AdminPanelProps { ... }`)
+
+### Performance Optimizations
+```javascript
+// next.config.mjs
+experimental: {
+  optimizePackageImports: [
+    "lucide-react",
+    "@radix-ui/react-select",
+    "@radix-ui/react-dialog",
+    "@radix-ui/react-tooltip",
+  ]
+}
+```
 
 ## Common Patterns & Conventions
 
@@ -227,6 +306,15 @@ Use `admin-tournament-creator.tsx` component or directly via `admin-panel.tsx`:
 ### Updating Tournament Status
 Modify `admin-panel.tsx` - edit functionality includes inline updates.
 
+### Dev-Only Components
+Admin panel dynamically imports these in development:
+```typescript
+const AdminDebug = process.env.NODE_ENV !== 'production'
+  ? dynamic(() => import('./admin-debug'), { ssr: false })
+  : (() => null as any)
+```
+These won't be bundled in production builds.
+
 ## Supabase MCP Integration
 
 ### Available Tools
@@ -259,3 +347,6 @@ See `SUPABASE_MCP_SETUP.md` for complete documentation.
 5. **v0.app origins** - This project was scaffolded with v0.app (see README.md)
 6. **Duplicate folders exist** - `Tournament website /` (with space) appears to be old/duplicate
 7. **Use Supabase MCP** for database operations instead of manual queries when possible
+8. **UI/UX issues documented** - Check `UI_UX_AUDIT_REPORT.md` for known issues (z-index conflicts, mobile footer overlap, etc.)
+9. **Database changes logged** - See `DATABASE_CHANGES.md` for recent schema updates
+10. **All hooks before conditionals** - React hooks must be declared before any conditional returns in components

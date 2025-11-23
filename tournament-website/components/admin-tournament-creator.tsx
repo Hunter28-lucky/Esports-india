@@ -46,6 +46,20 @@ export function AdminTournamentCreator({ onClose, onTournamentCreated }: AdminTo
       return
     }
     
+    // Check auth session first
+    const { data: { session }, error: authError } = await supabase.auth.getSession()
+    console.log('Auth session check:', { hasSession: !!session, authError })
+    
+    if (authError || !session) {
+      console.error('Auth session error:', authError)
+      toast({
+        title: "Authentication Error",
+        description: "Please sign in again to create tournaments",
+        variant: "destructive",
+      })
+      return
+    }
+    
     // Validate form
   if (!formData.name || !formData.game || !formData.entry_fee || 
     !formData.prize_pool || !formData.max_players || !formData.start_time) {
@@ -85,6 +99,11 @@ export function AdminTournamentCreator({ onClose, onTournamentCreated }: AdminTo
     try {
       console.log('Starting tournament creation...')
       
+      // Test database connectivity first
+      console.log('[DEBUG] Testing database connection...')
+      const testQuery = await supabase.from('tournaments').select('count').limit(1)
+      console.log('[DEBUG] Test query result:', testQuery)
+      
       const tournamentData: any = {
         name: formData.name.trim(),
         game: formData.game.trim(),
@@ -109,10 +128,17 @@ export function AdminTournamentCreator({ onClose, onTournamentCreated }: AdminTo
       
       console.log('About to insert tournament data:', tournamentData)
       
-      const { data, error } = await supabase
+      // Add timeout wrapper to prevent hanging
+      const insertPromise = supabase
         .from('tournaments')
         .insert([tournamentData])
         .select()
+      
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Database request timeout after 15 seconds')), 15000)
+      )
+      
+      const { data, error } = await Promise.race([insertPromise, timeoutPromise]) as any
       
       console.log('Database operation completed')
       console.log('Data:', data)
